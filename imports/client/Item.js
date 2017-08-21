@@ -5,23 +5,11 @@ import Items from '../api/Items'
 export default class Item extends Component {
 
 	voteOne() {
-		if(Meteor.userId()) { //makes this so only a logged in user can vote.
-			Items.update(this.props.item._id, {
-				$inc: { //Mongo's built in incrementor  
-					'itemOne.value': 1
-				}
-			})
-		}
+		Meteor.call('voteOnItem', this.props.item, 'itemOne')
 	}
-
+	
 	voteTwo() {
-		if(Meteor.userId()) { //makes this so only a logged in user can vote.
-			Items.update(this.props.item._id, {
-				$inc: { //Mongo's built in incrementor  
-					'itemTwo.value': 1
-				}
-			})
-		}
+		Meteor.call('voteOnItem', this.props.item, 'itemTwo')
 	}
 
 	render() {

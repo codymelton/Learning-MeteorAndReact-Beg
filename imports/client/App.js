@@ -32,18 +32,37 @@ class App extends Component {
 			// 	}
 			// })
 			//  ***The next line in how we call Meteor methods.  See the method in Items.js
-			Meteor.call('insertNewItem', itemOne, itemTwo)
-			this.refs.itemOne.value = ''
-			this.refs.itemTwo.value = ''
+			Meteor.call('insertNewItem', itemOne, itemTwo, (err, res) => {
+				if(!err) {
+					this.refs.itemOne.value = '' //This callback verifies that the data is good to submit before clearing
+					this.refs.itemTwo.value = '' //out all of the other form data.
+				}
+			})
 		}
 	}
+	
+	showAll() {
+		if(this.props.showAll){
+			Session.set('showAll', false)
+		} else{
+			Session.set('showAll', true) // You do not need to bind since you are creating a session var.  Only insert Session.set
+		}
+	}								 // Session takes two parameters ('nameOfVariable', value)
+
+
 
 	render() {
+		if (!this.props.ready) {
+			return <div> Loading... </div> /* Anytime that you use return it cancels anything to follow in react land. */
+		} 
 		return (
 			<div>
 				<header>
 					<h1>Non-rigged Voting</h1>
 					<LoginButtons />
+					<button onClick={this.showAll.bind(this)}> 
+						Show {this.props.showAll ? 'One' : 'All'}
+					</button>  {/* Will use to set a meteor session var */}
 				</header>
 				<main>
 					<form className='new-items' onSubmit={this.addItems.bind(this)}>
@@ -61,6 +80,7 @@ class App extends Component {
 				</main>
 			</div>
 		)
+		
 	}
 }
 
@@ -68,9 +88,17 @@ class App extends Component {
 // and then grab the data again when updated and push it in to the app.
 // createContainer is a package in the react-meteor-data.
 export default createContainer(() => {
+	/*This next line subscribes to the data found in Items.js and allows access to it by client side.*/
+	let itemsSub = Meteor.subscribe('allItems')
+	let showAll = Session.get('showAll')  /* Grabs session variable with the name in ()'s */
 	return {
+		showAll,
+		ready: itemsSub.ready(), /* Boolean to tell if the subscription is ready to grab.  It will remain false until fetched.*/
 		/*Finds items in Items DB collection and fetch returns them as an array.*/
-		items: Items.find({}).fetch()
+		items: Items.find({}, {
+			limit: showAll ? 50 : 1, /* Tarenary opperator to then have the logic for the global variable. */
+			sort: { lastUpdated: 1 } /* Can use 1 or -1 for sort.  If 1 Items with oldest will be displayed. */
+		}).fetch()
 	}
 }, App)
 
